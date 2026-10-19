@@ -1,9 +1,18 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, Lightformer } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { BufferAttribute, BufferGeometry, DoubleSide, MathUtils, Vector3, type Group } from "three";
+import {
+  BufferAttribute,
+  BufferGeometry,
+  CanvasTexture,
+  DoubleSide,
+  EquirectangularReflectionMapping,
+  MathUtils,
+  SRGBColorSpace,
+  Vector3,
+  type Group,
+} from "three";
 import { usePointer } from "@/lib/usePointer";
 
 /**
@@ -92,7 +101,11 @@ function Ribbon({ spec, segU, segV, flow, reduced }: { spec: Spec; segU: number;
       for (let j = 0; j <= segV; j++) {
         const v = (j / segV) * 2 - 1;
         const off = v * width * 0.5;
-        const cup = v * v * width * spec.cup;
+        const cup =
+          v * v * width * spec.cup +
+          taper *
+            (0.06 * Math.sin(u * 17 + v * 3.1 + time * 1.1 + spec.phase) +
+              0.05 * Math.sin(v * 6.2 + u * 9 + time * 0.7));
         arr[k++] = c.x + ac.x * off + cu.x * cup;
         arr[k++] = c.y + ac.y * off + cu.y * cup;
         arr[k++] = c.z + ac.z * off + cu.z * cup;
@@ -105,7 +118,7 @@ function Ribbon({ spec, segU, segV, flow, reduced }: { spec: Spec; segU: number;
 
   return (
     <mesh geometry={geo} position={spec.pos} rotation={spec.rot} frustumCulled={false}>
-      <meshPhysicalMaterial color="#f3f5f7" metalness={1} roughness={0.075} clearcoat={1} clearcoatRoughness={0.03} envMapIntensity={1.3} side={DoubleSide} />
+      <meshStandardMaterial color="#ffffff" metalness={1} roughness={0.015} envMapIntensity={1.35} side={DoubleSide} />
     </mesh>
   );
 }
@@ -134,8 +147,8 @@ function Droplets({ reduced }: { reduced: boolean }) {
     <group ref={group}>
       {drops.map((d, i) => (
         <mesh key={i} position={d.p} scale={[d.s, d.s * 1.08, d.s]}>
-          <sphereGeometry args={[1, 32, 32]} />
-          <meshPhysicalMaterial color="#f3f5f7" metalness={1} roughness={0.04} clearcoat={1} envMapIntensity={1.4} />
+          <sphereGeometry args={[1, 48, 48]} />
+          <meshStandardMaterial color="#ffffff" metalness={1} roughness={0.01} envMapIntensity={1.35} />
         </mesh>
       ))}
     </group>
@@ -143,31 +156,100 @@ function Droplets({ reduced }: { reduced: boolean }) {
 }
 
 /**
- * Studio: a ring of soft panels with alternating brightness wraps the sculpture so curved metal
- * shows smooth white→graphite gradients (molten look), plus a few hard strips for specular sparkle
- * and one warm amber kicker.
+ * Hand-painted equirectangular environment: pure black studio with organic white light strokes.
+ * Mirror-finish metal reflects this directly, which is what gives liquid chrome its crisp
+ * black/white, high-frequency look (a few rect softboxes read as flat "graphic" bands instead).
  */
-const RING = Array.from({ length: 12 }, (_, i) => {
-  const a = (i / 12) * Math.PI * 2;
-  const v = 0.5 + 0.5 * Math.sin(i * 2.1 + 0.6);
-  return { pos: [Math.sin(a) * 11, (i % 3) - 1, Math.cos(a) * 11] as [number, number, number], intensity: 0.15 + v * v * 2.6 };
-});
+function paintEnvironment() {
+  const W = 2048;
+  const H = 1024;
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const ctx = c.getContext("2d")!;
+  let seed = 20;
+  const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
-function MoltenStudio() {
-  return (
-    <Environment resolution={512} frames={1}>
-      <color attach="background" args={["#0b0c0e"]} />
-      <Lightformer form="rect" intensity={2.2} color="#ffffff" position={[0, 14, 0]} scale={[30, 30, 1]} />
-      <Lightformer form="rect" intensity={0.25} color="#8a929b" position={[0, -14, 0]} scale={[30, 30, 1]} />
-      {RING.map((r, i) => (
-        <Lightformer key={i} form="rect" intensity={r.intensity} color={i % 5 === 0 ? "#e4eef8" : "#ffffff"} position={r.pos} scale={[5.5, 22, 1]} />
-      ))}
-      <Lightformer form="rect" intensity={10} color="#ffffff" position={[-4, 2, 6]} scale={[0.5, 12, 1]} />
-      <Lightformer form="rect" intensity={10} color="#ffffff" position={[3, 5, 5]} scale={[12, 0.4, 1]} />
-      <Lightformer form="circle" intensity={8} color="#ffffff" position={[5, 3, 4]} scale={1.2} />
-      <Lightformer form="rect" intensity={5} color="#ffaa5e" position={[8, -2, 0]} scale={[2, 9, 1]} />
-    </Environment>
-  );
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, H);
+
+  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.42);
+  sky.addColorStop(0, "#ffffff");
+  sky.addColorStop(0.35, "#d9d9d9");
+  sky.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H * 0.42);
+
+  const floor = ctx.createLinearGradient(0, H * 0.7, 0, H);
+  floor.addColorStop(0, "rgba(0,0,0,0)");
+  floor.addColorStop(1, "#3a3a3a");
+  ctx.fillStyle = floor;
+  ctx.fillRect(0, H * 0.7, W, H * 0.3);
+
+  // draw twice (x and x-W) so the panorama wraps without a seam
+  const wrap = (fn: (dx: number) => void) => [0, -W, W].forEach(fn);
+
+  // big soft light blooms
+  for (let i = 0; i < 6; i++) {
+    const x = r() * W, y = H * (0.25 + r() * 0.45), rad = 160 + r() * 300;
+    wrap((dx) => {
+      const g = ctx.createRadialGradient(x + dx, y, 0, x + dx, y, rad);
+      g.addColorStop(0, "rgba(255,255,255,0.95)");
+      g.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x + dx - rad, y - rad, rad * 2, rad * 2);
+    });
+  }
+
+  // organic light strokes, soft → sharp
+  ctx.lineCap = "round";
+  const stroke = (count: number, wMin: number, wMax: number, blur: number, alpha: number) => {
+    for (let i = 0; i < count; i++) {
+      const x0 = r() * W, y0 = H * (0.12 + r() * 0.76);
+      const x1 = x0 + (r() - 0.5) * 900, y1 = H * (0.12 + r() * 0.76);
+      const cx1 = x0 + (r() - 0.5) * 700, cy1 = y0 + (r() - 0.5) * 500;
+      const cx2 = x1 + (r() - 0.5) * 700, cy2 = y1 + (r() - 0.5) * 500;
+      ctx.lineWidth = wMin + r() * (wMax - wMin);
+      ctx.strokeStyle = `rgba(255,255,255,${alpha * (0.6 + r() * 0.4)})`;
+      ctx.filter = blur ? `blur(${blur * (0.5 + r())}px)` : "none";
+      wrap((dx) => {
+        ctx.beginPath();
+        ctx.moveTo(x0 + dx, y0);
+        ctx.bezierCurveTo(cx1 + dx, cy1, cx2 + dx, cy2, x1 + dx, y1);
+        ctx.stroke();
+      });
+    }
+  };
+  stroke(9, 90, 220, 28, 0.95);
+  stroke(7, 24, 60, 6, 1);
+  stroke(5, 3, 7, 0.8, 1);
+  ctx.filter = "none";
+
+  // a few hard vertical studio strips for sparkle
+  for (let i = 0; i < 6; i++) {
+    const x = r() * W, w = 6 + r() * 30;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(x, H * 0.18, w, H * (0.3 + r() * 0.4));
+  }
+
+  const tex = new CanvasTexture(c);
+  tex.mapping = EquirectangularReflectionMapping;
+  tex.colorSpace = SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function LiquidEnvironment() {
+  const scene = useThree((s) => s.scene);
+  useEffect(() => {
+    const tex = paintEnvironment();
+    scene.environment = tex;
+    return () => {
+      scene.environment = null;
+      tex.dispose();
+    };
+  }, [scene]);
+  return null;
 }
 
 function Sculpture({ section, reduced, lite }: { section: RefObject<HTMLElement | null>; reduced: boolean; lite: boolean }) {
@@ -191,7 +273,7 @@ function Sculpture({ section, reduced, lite }: { section: RefObject<HTMLElement 
   return (
     <group ref={root} position={lite ? [0.2, 0.9, 0] : [1.4, 0.35, 0]} scale={lite ? 0.62 : 1}>
       {RIBBONS.map((s, i) => (
-        <Ribbon key={i} spec={s} segU={lite ? 150 : 280} segV={lite ? 12 : 22} flow={flow} reduced={reduced} />
+        <Ribbon key={i} spec={s} segU={lite ? 170 : 380} segV={lite ? 16 : 40} flow={flow} reduced={reduced} />
       ))}
       <Droplets reduced={reduced} />
     </group>
@@ -215,13 +297,14 @@ export default function LiquidChromeScene({ section }: { section: RefObject<HTML
   return (
     <div ref={wrap} className="absolute inset-0">
       <Canvas
-        dpr={[1, lite ? 1.4 : 1.8]}
+        flat
+        dpr={[1, lite ? 1.5 : 2]}
         camera={{ position: [0, 0, 9], fov: 35 }}
         frameloop={visible ? "always" : "never"}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         aria-hidden
       >
-        <MoltenStudio />
+        <LiquidEnvironment />
         <Sculpture section={section} reduced={reduced} lite={lite} />
       </Canvas>
     </div>
