@@ -106,12 +106,12 @@ export function Contact() {
           ))}
         </ul>
 
-        <footer className="mt-24 lg:mt-36">
+        <footer className="mt-24 pb-6 lg:mt-36">
           <div className="flex flex-col justify-between gap-3 pb-6 sm:flex-row">
             <p className="eyebrow">© 2026 Hae Eun Lee — {profile.location}</p>
             <p className="eyebrow">AI &amp; Software Engineer</p>
           </div>
-          <p aria-hidden className="chrome-text display -mb-[0.14em] select-none whitespace-nowrap text-center text-[clamp(3rem,13.2vw,15rem)] leading-[0.8] tracking-[-0.06em] opacity-25">
+          <p aria-hidden className="chrome-text display select-none whitespace-nowrap pb-[0.12em] text-center text-[clamp(2.2rem,11.2vw,14rem)] leading-[0.85] tracking-[-0.06em] opacity-25">
             HAE EUN LEE
           </p>
         </footer>
