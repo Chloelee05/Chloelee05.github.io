@@ -69,11 +69,22 @@ export function Hero() {
 
       {/* 3D stage — right on desktop, behind headline on mobile */}
       <div className="absolute inset-x-0 top-[8svh] h-[42svh] lg:inset-y-0 lg:left-[32%] lg:right-0 lg:top-0 lg:h-auto">
+        {/* iridescent aura behind the sculpture */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 grid place-items-center lg:translate-x-[9%]">
+          <div
+            className="aspect-square w-[min(80%,40rem)] rounded-full opacity-70 blur-3xl"
+            style={{
+              background:
+                "conic-gradient(from 120deg, #dcecf8, #e9defc, #fde7d6, #dcf3ef, #dcecf8)",
+              animation: "aura-spin 24s linear infinite",
+            }}
+          />
+        </div>
         {gl === null ? <FallbackOrb /> : gl ? <HeroSceneWrap /> : <FallbackOrb />}
         {/* soft floor shadow */}
         <div
           aria-hidden
-          className="pointer-events-none absolute bottom-[10%] left-[58%] h-8 w-[30%] -translate-x-1/2 rounded-[50%] bg-ink/10 blur-2xl lg:bottom-[15%]"
+          className="pointer-events-none absolute bottom-[10%] left-1/2 h-8 w-[30%] lg:left-[62%] -translate-x-1/2 rounded-[50%] bg-ink/10 blur-2xl lg:bottom-[15%]"
         />
       </div>
 
@@ -84,7 +95,7 @@ export function Hero() {
         <div className="absolute inset-x-0 bottom-[14%] h-px bg-line/70" />
       </div>
 
-      <div ref={content} className="relative z-10 mx-auto flex min-h-[100svh] max-w-[90rem] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:justify-center lg:px-[8%] lg:pb-24">
+      <div ref={content} className="relative z-10 mx-auto flex min-h-[100svh] max-w-[90rem] flex-col justify-end px-5 pb-8 pt-28 sm:px-8 lg:justify-center lg:px-[8%] lg:pb-[17svh] lg:pt-24">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -97,8 +108,8 @@ export function Hero() {
         <SplitLines
           as="h1"
           delay={0.55}
-          className="display text-[clamp(2.9rem,9.4vw,8.6rem)] lg:max-w-[62rem]"
-          lines={["Engineering", "Intelligence.", <span key="d" className="text-mute">Designing</span>, <span key="p" className="text-mute">Possibilities.</span>]}
+          className="display text-[clamp(2.9rem,min(8.6vw,11.5svh),8.2rem)] lg:max-w-[62rem]"
+          lines={["Engineering", <span key="i" className="chrome-ink">Intelligence.</span>, <span key="d" className="text-mute">Designing</span>, <span key="p" className="text-mute">Possibilities.</span>]}
         />
 
         <motion.p
@@ -125,16 +136,32 @@ export function Hero() {
         </motion.div>
       </div>
 
-      {/* meta bar */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden items-end justify-between px-[8%] pb-7 lg:flex">
-        <span className="eyebrow">{profile.location} · 1.3521° N, 103.8198° E</span>
-        <span className="eyebrow flex items-center gap-3">
+      {/* info strip — key facts at a glance */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, delay: 1.6 }}
+        className="absolute inset-x-0 bottom-0 z-10 hidden h-[14%] items-center justify-between gap-8 px-[8%] lg:flex"
+      >
+        <dl className="flex gap-14">
+          {[
+            ["Currently", "AI & Software Engineer — Maibel"],
+            ["Based in", profile.location],
+            ["Focus", "AI systems · Full-stack · Automation"],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <dt className="eyebrow">{k}</dt>
+              <dd className="mt-1.5 text-[0.85rem] tracking-tight text-ink">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <a href="#about" className="eyebrow flex items-center gap-3 transition-colors hover:text-ink">
           Scroll
           <span aria-hidden className="relative block h-8 w-px overflow-hidden bg-line">
             <span className="absolute inset-0 bg-ink" style={{ animation: "scroll-cue 2.2s var(--ease-premium) infinite" }} />
           </span>
-        </span>
-      </div>
+        </a>
+      </motion.div>
     </section>
   );
 }

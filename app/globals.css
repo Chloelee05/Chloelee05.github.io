@@ -67,6 +67,21 @@ body {
   0% { transform: translateY(-100%); }
   60%, 100% { transform: translateY(100%); }
 }
+@keyframes aura-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes chrome-sweep {
+  0%, 15% { background-position: 120% 0; }
+  60%, 100% { background-position: -20% 0; }
+}
+.chrome-ink {
+  background: linear-gradient(100deg, #111 0%, #111 38%, #8d97a2 46%, #e9eef3 50%, #8d97a2 54%, #111 62%, #111 100%);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: chrome-sweep 6s var(--ease-premium) 1.6s infinite;
+}
 @keyframes orb-fallback {
   0%, 100% { transform: translateY(-6px); }
   50% { transform: translateY(6px); }
