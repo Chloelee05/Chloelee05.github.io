@@ -4,17 +4,14 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  CatmullRomCurve3,
   ExtrudeGeometry,
   MathUtils,
   Shape,
-  TubeGeometry,
-  Vector3,
   type Group,
 } from "three";
 import { usePointer } from "@/lib/usePointer";
 
-export type AccentVariant = "star" | "web";
+export type AccentVariant = "star";
 
 /** High-contrast studio so chrome reads as chrome on a white page. Procedural, no downloads. */
 function ChromeStudio() {
@@ -84,34 +81,6 @@ function Star() {
   );
 }
 
-/* ---------- Organic chrome web ---------- */
-function mulberry(seed: number) {
-  return () => {
-    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-function Web() {
-  const geos = useMemo(() => {
-    const rnd = mulberry(7);
-    return Array.from({ length: 15 }, (_, i) => {
-      const pts = Array.from({ length: 6 }, () => new Vector3((rnd() - 0.5) * 4.4, (rnd() - 0.5) * 4.4, (rnd() - 0.5) * 3.2));
-      const curve = new CatmullRomCurve3(pts, false, "catmullrom", 0.6);
-      return new TubeGeometry(curve, 160, 0.018 + rnd() * 0.05 + (i % 4 === 0 ? 0.05 : 0), 12, false);
-    });
-  }, []);
-  return (
-    <group>
-      {geos.map((g, i) => (
-        <mesh key={i} geometry={g}><Chrome rough={0.06} /></mesh>
-      ))}
-    </group>
-  );
-}
-
-
 function Rig({ variant, reduced }: { variant: AccentVariant; reduced: boolean }) {
   const root = useRef<Group>(null);
   const spin = useRef<Group>(null);
@@ -125,15 +94,13 @@ function Rig({ variant, reduced }: { variant: AccentVariant; reduced: boolean })
     g.rotation.y = MathUtils.damp(g.rotation.y, reduced ? 0 : p.x * 0.55, 3, d);
     g.position.y = reduced ? 0 : Math.sin(t * 0.8) * 0.1;
     if (!reduced) {
-      if (variant === "star") spin.current!.rotation.y = Math.sin(t * 0.5) * 0.5;
-      else spin.current!.rotation.y += d * (variant === "web" ? 0.1 : 0.16);
+      spin.current!.rotation.y = Math.sin(t * 0.5) * 0.5;
     }
   });
   return (
     <group ref={root}>
       <group ref={spin}>
         {variant === "star" && <Star />}
-        {variant === "web" && <Web />}
       </group>
     </group>
   );
