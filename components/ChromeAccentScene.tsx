@@ -14,7 +14,7 @@ import {
 } from "three";
 import { usePointer } from "@/lib/usePointer";
 
-export type AccentVariant = "star" | "saturn" | "web";
+export type AccentVariant = "star" | "web";
 
 /** High-contrast studio so chrome reads as chrome on a white page. Procedural, no downloads. */
 function ChromeStudio() {
@@ -84,19 +84,6 @@ function Star() {
   );
 }
 
-/* ---------- Saturn ---------- */
-function Saturn() {
-  return (
-    <group rotation={[0.35, 0, -0.38]} scale={1.1}>
-      <mesh><sphereGeometry args={[1.15, 96, 96]} /><Chrome rough={0.05} /></mesh>
-      <mesh rotation={[Math.PI / 2, 0, 0]} scale={[1, 1, 0.16]}>
-        <torusGeometry args={[2.05, 0.42, 48, 200]} />
-        <Chrome rough={0.06} />
-      </mesh>
-    </group>
-  );
-}
-
 /* ---------- Organic chrome web ---------- */
 function mulberry(seed: number) {
   return () => {
@@ -146,7 +133,6 @@ function Rig({ variant, reduced }: { variant: AccentVariant; reduced: boolean })
     <group ref={root}>
       <group ref={spin}>
         {variant === "star" && <Star />}
-        {variant === "saturn" && <Saturn />}
         {variant === "web" && <Web />}
       </group>
     </group>
@@ -169,7 +155,7 @@ export default function ChromeAccentScene({ variant }: { variant: AccentVariant 
     <div ref={wrap} className="absolute inset-0">
       <Canvas
         dpr={[1, 1.75]}
-        camera={{ position: [0, 0, variant === "saturn" ? 9 : 12.5], fov: 30 }}
+        camera={{ position: [0, 0, 12.5], fov: 30 }}
         frameloop={visible ? "always" : "never"}
         gl={{ alpha: true, antialias: true }}
         aria-hidden

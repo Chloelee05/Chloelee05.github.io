@@ -4,7 +4,9 @@ import { motion, useScroll, useTransform, useReducedMotion } from "motion/react"
 import { useRef } from "react";
 import { Reveal, SectionLabel, SplitLines } from "./Reveal";
 import { about } from "@/lib/content";
-import { ChromeAccent } from "./ChromeAccent";
+import dynamic from "next/dynamic";
+
+const LiquidWreath = dynamic(() => import("./LiquidWreathScene"), { ssr: false });
 
 export function About() {
   const ref = useRef<HTMLElement>(null);
@@ -23,9 +25,9 @@ export function About() {
             lines={["Building intelligent", "systems that", "make an impact."]}
           />
 
-          {/* chrome Saturn sculpture */}
-          <motion.div style={{ y: rise }} className="hidden lg:col-span-4 lg:block">
-            <ChromeAccent variant="saturn" className="ml-auto h-72 w-full max-w-[26rem] xl:h-80" />
+          {/* liquid-chrome wreath */}
+          <motion.div style={{ y: rise }} aria-hidden className="pointer-events-none relative -my-10 h-80 sm:h-96 lg:col-span-4 lg:-mr-10 lg:-mt-16 lg:h-[30rem]">
+            <LiquidWreath />
           </motion.div>
 
           <div className="lg:col-span-5 lg:col-start-1 lg:row-start-2">
