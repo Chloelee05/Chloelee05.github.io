@@ -44,6 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
+        <noscript>
+          <style>{`[style*="opacity"]{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
         {children}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>
