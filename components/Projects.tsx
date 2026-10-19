@@ -27,7 +27,7 @@ function ProjectRow({ project, index }: { project: Project; index: number }) {
       <motion.span
         aria-hidden
         style={{ y: bigNum }}
-        className={`display pointer-events-none absolute top-6 select-none text-[clamp(8rem,22vw,20rem)] text-ink/[0.035] lg:top-1/2 lg:-translate-y-1/2 ${flip ? "right-0" : "left-0"}`}
+        className={`display pointer-events-none absolute top-6 select-none text-[clamp(8rem,22vw,20rem)] chrome-text opacity-60 lg:top-1/2 lg:-translate-y-1/2 ${flip ? "right-0" : "left-0"}`}
       >
         {project.number}
       </motion.span>

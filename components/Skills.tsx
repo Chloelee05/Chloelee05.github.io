@@ -2,6 +2,8 @@
 
 import { Reveal, SectionLabel, SplitLines } from "./Reveal";
 import { skills } from "@/lib/content";
+import { ChromeAccent } from "./ChromeAccent";
+import { WaveLines } from "./WaveLines";
 
 const spans = [
   "lg:col-span-7 lg:row-span-2",
@@ -13,10 +15,14 @@ const spans = [
 
 export function Skills() {
   return (
-    <section id="skills" className="relative scroll-mt-10 border-t border-line bg-white px-5 py-28 sm:px-8 md:py-44 lg:px-[8%]">
-      <div className="mx-auto max-w-[90rem]">
+    <section id="skills" className="relative scroll-mt-10 overflow-hidden border-t border-line bg-white px-5 py-28 sm:px-8 md:py-44 lg:px-[8%]">
+      <WaveLines flip className="inset-x-0 bottom-0 h-1/2 opacity-50" />
+      <div className="relative mx-auto max-w-[90rem]">
         <SectionLabel index="04" label="CAPABILITIES" />
-        <SplitLines className="display mt-12 text-[clamp(2.2rem,5.6vw,5.4rem)] lg:mt-20" lines={["The toolkit", "behind the work."]} />
+        <div className="relative">
+          <SplitLines className="display mt-12 text-[clamp(2.2rem,5.6vw,5.4rem)] lg:mt-20" lines={["The toolkit", "behind the work."]} />
+          <ChromeAccent variant="web" className="absolute -top-10 right-0 hidden h-72 w-96 md:block lg:h-96 lg:w-[34rem]" />
+        </div>
 
         <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:mt-24 lg:grid-cols-12 lg:gap-4">
           {skills.map((cat, i) => (

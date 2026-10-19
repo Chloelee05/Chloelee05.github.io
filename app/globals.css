@@ -50,6 +50,12 @@ body {
 .chrome {
   background: linear-gradient(135deg, #fdfdfe 0%, #c9cfd6 28%, #f4f6f8 48%, #98a1ab 72%, #eef1f4 100%);
 }
+.chrome-text {
+  background: linear-gradient(120deg, #f4f6f8 0%, #a3acb5 30%, #eef1f4 52%, #8b949e 78%, #e4e8ec 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .grid-paper {
   background-image:
     linear-gradient(to right, var(--color-line) 1px, transparent 1px),

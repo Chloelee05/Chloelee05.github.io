@@ -4,12 +4,12 @@ import { motion, useScroll, useTransform, useReducedMotion } from "motion/react"
 import { useRef } from "react";
 import { Reveal, SectionLabel, SplitLines } from "./Reveal";
 import { about } from "@/lib/content";
+import { ChromeAccent } from "./ChromeAccent";
 
 export function About() {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const rot = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : 120]);
   const rise = useTransform(scrollYProgress, [0, 1], [reduce ? 0 : 60, reduce ? 0 : -60]);
 
   return (
@@ -23,15 +23,9 @@ export function About() {
             lines={["Building intelligent", "systems that", "make an impact."]}
           />
 
-          {/* chrome ring ornament */}
-          <motion.div
-            aria-hidden
-            style={{ rotate: rot, y: rise }}
-            className="relative hidden aspect-square w-40 justify-self-end lg:col-span-4 lg:block xl:w-56"
-          >
-            <div className="chrome absolute inset-0 rounded-full" />
-            <div className="absolute inset-[14%] rounded-full bg-paper shadow-[inset_0_8px_24px_rgba(17,17,17,0.18)]" />
-            <div className="absolute inset-[34%] rounded-full bg-ice/70 ring-1 ring-white" />
+          {/* chrome Saturn sculpture */}
+          <motion.div style={{ y: rise }} className="hidden lg:col-span-4 lg:block">
+            <ChromeAccent variant="saturn" className="ml-auto h-72 w-full max-w-[26rem] xl:h-80" />
           </motion.div>
 
           <div className="lg:col-span-5 lg:col-start-1 lg:row-start-2">

@@ -4,6 +4,8 @@ import { ArrowUpRight, Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { Reveal, SectionLabel, SplitLines } from "./Reveal";
 import { profile } from "@/lib/content";
+import { ChromeAccent } from "./ChromeAccent";
+import { WaveLines } from "./WaveLines";
 
 const links = [
   { label: "Email", value: profile.email, href: `mailto:${profile.email}`, external: false },
@@ -25,7 +27,9 @@ export function Contact() {
     <section id="contact" className="relative scroll-mt-10 overflow-hidden border-t border-line px-5 pt-28 sm:px-8 md:pt-44 lg:px-[8%]">
       {/* soft ice horizon */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-ice/60 to-transparent" />
+      <WaveLines className="inset-x-0 top-0 h-3/4 opacity-60" />
       <div className="relative mx-auto max-w-[90rem]">
+        <ChromeAccent variant="saturn" className="absolute right-0 top-24 hidden h-72 w-72 md:block lg:h-[26rem] lg:w-[26rem]" />
         <SectionLabel index="05" label="CONTACT" />
         <SplitLines
           className="display mt-12 text-[clamp(3rem,10.5vw,10.5rem)] lg:mt-20"

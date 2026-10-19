@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
+import { Sparkle } from "./Sparkle";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -65,6 +66,7 @@ export function SplitLines({
 export function SectionLabel({ index, label }: { index: string; label: string }) {
   return (
     <Reveal className="flex items-center gap-4" y={12}>
+      <Sparkle size={14} />
       <span className="eyebrow text-ink">
         {index} / {label}
       </span>

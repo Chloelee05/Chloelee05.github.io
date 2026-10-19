@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion } from "motion/react";
 import { Button } from "./Button";
+import { WaveLines } from "./WaveLines";
 import { SplitLines } from "./Reveal";
 import { profile } from "@/lib/content";
 
@@ -64,6 +65,8 @@ export function Hero() {
 
   return (
     <section id="home" ref={section} className="relative isolate min-h-[100svh] overflow-hidden">
+      <WaveLines className="inset-x-[-10%] bottom-[-8%] z-0 h-[60%] opacity-70" />
+
       {/* 3D stage — right on desktop, behind headline on mobile */}
       <div className="absolute inset-x-0 top-[8svh] h-[42svh] lg:inset-y-0 lg:left-[32%] lg:right-0 lg:top-0 lg:h-auto">
         {gl === null ? <FallbackOrb /> : gl ? <HeroSceneWrap /> : <FallbackOrb />}

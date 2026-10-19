@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Reveal, SectionLabel, SplitLines } from "./Reveal";
 import { experience } from "@/lib/content";
+import { ChromeAccent } from "./ChromeAccent";
 
 export function Experience() {
   const list = useRef<HTMLOListElement>(null);
@@ -37,10 +38,13 @@ export function Experience() {
     <section id="experience" className="relative scroll-mt-10 border-t border-line bg-white px-5 py-28 sm:px-8 md:py-44 lg:px-[8%]">
       <div className="mx-auto max-w-[90rem]">
         <SectionLabel index="02" label="EXPERIENCE" />
-        <SplitLines
-          className="display mt-12 text-[clamp(2.2rem,5.6vw,5.4rem)] lg:mt-20"
-          lines={["Where the work", "gets done."]}
-        />
+        <div className="relative">
+          <SplitLines
+            className="display mt-12 text-[clamp(2.2rem,5.6vw,5.4rem)] lg:mt-20"
+            lines={["Where the work", "gets done."]}
+          />
+          <ChromeAccent variant="star" className="absolute -top-6 right-0 hidden h-64 w-80 md:block lg:h-80 lg:w-[26rem]" />
+        </div>
 
         <ol ref={list} className="relative mt-16 lg:mt-28">
           {/* spine */}
