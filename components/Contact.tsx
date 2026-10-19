@@ -1,11 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { ArrowUpRight, Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Reveal, SectionLabel, SplitLines } from "./Reveal";
 import { profile } from "@/lib/content";
-import { ChromeAccent } from "./ChromeAccent";
-import { WaveLines } from "./WaveLines";
+
+const LiquidChrome = dynamic(() => import("./LiquidChromeScene"), { ssr: false });
 
 const links = [
   { label: "Email", value: profile.email, href: `mailto:${profile.email}`, external: false },
@@ -13,7 +14,11 @@ const links = [
   { label: "LinkedIn", value: "linkedin.com/in/hae-eun-lee-169baa2b2", href: profile.linkedin, external: true },
 ];
 
+const grain =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
+
 export function Contact() {
+  const section = useRef<HTMLElement>(null);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -24,39 +29,60 @@ export function Contact() {
   };
 
   return (
-    <section id="contact" className="relative scroll-mt-10 overflow-hidden bg-[#050607] px-5 pt-28 text-white sm:px-8 md:pt-44 lg:px-[8%]">
-      <WaveLines stroke="#5d6772" className="inset-x-0 top-0 h-full opacity-40" />
+    <section id="contact" ref={section} className="relative scroll-mt-10 overflow-hidden bg-[#050607] text-white">
+      {/* ── stage: molten chrome sculpture ── */}
+      <div className="relative h-[100svh] min-h-[640px] max-h-[1100px]">
+        <LiquidChrome section={section} />
 
-      <div className="relative mx-auto max-w-[90rem]">
-        <SectionLabel index="05" label="CONTACT" dark />
+        {/* legibility + cinematic falloff */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#050607] via-transparent to-[#050607]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050607] via-[#050607]/40 to-transparent md:bg-gradient-to-r md:from-[#050607]/90 md:via-[#050607]/30 md:to-transparent" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: grain }} />
 
-        {/* stage: chrome thorn frame + chrome web behind the headline */}
-        <div className="relative mt-10 lg:mt-16">
-          <ChromeAccent tone="dark" variant="frame" className="absolute -inset-x-4 -inset-y-6 z-0 hidden md:block lg:-inset-x-10 lg:-inset-y-10" />
-          <ChromeAccent tone="dark" variant="web" className="absolute -bottom-6 -right-8 z-0 h-72 w-80 opacity-90 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:-right-6 md:h-[30rem] md:w-[34rem] lg:-right-24 lg:h-[34rem] lg:w-[38rem]" />
+        <div className="relative z-10 mx-auto flex h-full max-w-[90rem] flex-col justify-between px-5 pb-12 pt-28 sm:px-8 md:pt-36 lg:px-[8%] lg:pb-20">
+          <div className="flex items-start justify-between">
+            <SectionLabel index="05" label="CONTACT" dark />
+            <Reveal y={10} className="eyebrow hidden text-right md:block">
+              {profile.location}
+              <br />
+              Open to opportunities
+            </Reveal>
+          </div>
 
-          <div className="relative z-10 pb-64 pt-10 md:pb-24 md:pt-24 md:px-14 lg:px-24 lg:py-32">
+          <div>
             <SplitLines
-              className="display text-[clamp(3rem,10.5vw,10.5rem)]"
-              lines={["Let's Build", <span key="n" className="text-mute">What&apos;s Next.</span>]}
+              className="display text-[clamp(3.2rem,10.5vw,10.5rem)] drop-shadow-[0_10px_40px_rgba(0,0,0,0.55)]"
+              lines={["Let's Build", <span key="n" className="text-white/45">What&apos;s Next.</span>]}
             />
-            <Reveal className="mt-8 max-w-md text-lg leading-relaxed text-mute">
-              Open to meaningful engineering opportunities and collaborations.
+            <Reveal delay={0.2} className="mt-8 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+              <p className="max-w-md text-lg leading-relaxed text-white/60">
+                Open to meaningful engineering opportunities and collaborations.
+              </p>
+              <a
+                href={`mailto:${profile.email}`}
+                className="group inline-flex h-14 w-fit items-center gap-3 rounded-full border border-white/25 bg-white/[0.06] px-7 text-sm tracking-tight backdrop-blur-md transition-colors duration-500 hover:border-white hover:bg-white hover:text-[#050607]"
+              >
+                Start a conversation
+                <ArrowUpRight size={16} className="transition-transform duration-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </a>
             </Reveal>
           </div>
         </div>
+      </div>
 
-        <ul className="mt-16 border-t border-white/70 lg:mt-24">
+      {/* ── links + footer ── */}
+      <div className="relative mx-auto max-w-[90rem] px-5 sm:px-8 lg:px-[8%]">
+        <ul className="border-t border-white/60">
           {links.map((l, i) => (
             <Reveal key={l.label} delay={i * 0.08}>
-              <li className="border-b border-white/15">
+              <li className="border-b border-white/12">
                 <div className="flex items-center">
                   <a
                     href={l.href}
                     {...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                     className="group relative flex min-h-[4.5rem] flex-1 flex-col justify-center gap-1 overflow-hidden py-4 sm:flex-row sm:items-center sm:gap-10 sm:py-7"
                   >
-                    <span aria-hidden className="absolute inset-0 origin-bottom scale-y-0 bg-white/[0.07] transition-transform duration-700 ease-premium group-hover:scale-y-100" />
+                    <span aria-hidden className="absolute inset-0 origin-bottom scale-y-0 bg-gradient-to-r from-white/[0.08] via-white/[0.03] to-transparent transition-transform duration-700 ease-premium group-hover:scale-y-100" />
                     <span className="eyebrow relative w-28 shrink-0">{l.label}</span>
                     <span className="relative min-w-0 flex-1 break-words text-[clamp(1.1rem,3vw,2.6rem)] tracking-tight transition-transform duration-700 ease-premium group-hover:translate-x-3">
                       {l.value}
@@ -80,13 +106,12 @@ export function Contact() {
           ))}
         </ul>
 
-        {/* oversized footer */}
         <footer className="mt-24 lg:mt-36">
           <div className="flex flex-col justify-between gap-3 pb-6 sm:flex-row">
             <p className="eyebrow">© 2026 Hae Eun Lee — {profile.location}</p>
             <p className="eyebrow">AI &amp; Software Engineer</p>
           </div>
-          <p aria-hidden className="display -mb-[0.14em] select-none whitespace-nowrap text-center text-[clamp(3rem,13.2vw,15rem)] leading-[0.8] tracking-[-0.06em] text-white/[0.07]">
+          <p aria-hidden className="chrome-text display -mb-[0.14em] select-none whitespace-nowrap text-center text-[clamp(3rem,13.2vw,15rem)] leading-[0.8] tracking-[-0.06em] opacity-25">
             HAE EUN LEE
           </p>
         </footer>

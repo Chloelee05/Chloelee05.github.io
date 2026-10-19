@@ -1,0 +1,229 @@
+"use client";
+
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Environment, Lightformer } from "@react-three/drei";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { BufferAttribute, BufferGeometry, DoubleSide, MathUtils, Vector3, type Group } from "three";
+import { usePointer } from "@/lib/usePointer";
+
+/**
+ * Molten-chrome sculpture: flowing, twisting metal sheets + floating droplets.
+ * Ribbons are analytic surfaces rebuilt on the CPU each frame so normals (and therefore
+ * the chrome reflections) stay physically correct while the metal "flows".
+ */
+
+type Spec = {
+  len: number;
+  width: number;
+  amp: [number, number];
+  freq: [number, number, number];
+  twist: number;
+  phase: number;
+  speed: number;
+  cup: number;
+  pos: [number, number, number];
+  rot: [number, number, number];
+};
+
+const RIBBONS: Spec[] = [
+  // broad folded sheet — the hero mass
+  { len: 12, width: 3.6, amp: [0.9, 0.3], freq: [2.1, 4.6, 1.6], twist: Math.PI * 0.9, phase: 0, speed: 0.28, cup: 0.9, pos: [0.4, 0.1, -0.6], rot: [0.35, 0.2, 0.5] },
+  // second sheet crossing it
+  { len: 11, width: 2.4, amp: [0.8, 0.28], freq: [2.6, 5.4, 2.0], twist: Math.PI * 1.25, phase: 1.9, speed: 0.24, cup: 0.8, pos: [1.2, 0.7, -1.8], rot: [-0.4, 0.3, -0.55] },
+  // fine fast ribbon in front
+  { len: 12, width: 0.42, amp: [0.65, 0.22], freq: [3.4, 7.0, 2.6], twist: Math.PI * 2.4, phase: 3.1, speed: 0.4, cup: 0.2, pos: [0.2, -0.6, 1.3], rot: [0.1, -0.2, 0.25] },
+  // curl on the right edge
+  { len: 7, width: 1.5, amp: [0.55, 0.3], freq: [2.6, 5.2, 2.0], twist: Math.PI * 1.1, phase: 4.4, speed: 0.3, cup: 1.0, pos: [3.2, -0.3, -0.2], rot: [0.5, 0.35, 1.25] },
+];
+
+const tmp = { c: new Vector3(), a: new Vector3(), b: new Vector3(), t: new Vector3(), bn: new Vector3(), n: new Vector3(), ac: new Vector3(), cu: new Vector3() };
+const UP = new Vector3(0, 1, 0);
+
+function center(s: Spec, u: number, time: number, out: Vector3) {
+  const p = s.phase;
+  const w = time * s.speed;
+  return out.set(
+    (u - 0.5) * s.len,
+    s.amp[0] * Math.sin(u * s.freq[0] + p + w) + s.amp[1] * Math.sin(u * s.freq[1] - w * 0.7 + p * 2),
+    s.amp[0] * 0.85 * Math.cos(u * s.freq[2] + p + w * 0.8),
+  );
+}
+
+function Ribbon({ spec, segU, segV, flow, reduced }: { spec: Spec; segU: number; segV: number; flow: RefObject<number>; reduced: boolean }) {
+  const geo = useMemo(() => {
+    const g = new BufferGeometry();
+    const count = (segU + 1) * (segV + 1);
+    g.setAttribute("position", new BufferAttribute(new Float32Array(count * 3), 3));
+    const idx: number[] = [];
+    for (let i = 0; i < segU; i++)
+      for (let j = 0; j < segV; j++) {
+        const a = i * (segV + 1) + j;
+        const b = a + segV + 1;
+        idx.push(a, b, a + 1, b, b + 1, a + 1);
+      }
+    g.setIndex(idx);
+    return g;
+  }, [segU, segV]);
+
+  const built = useRef(false);
+
+  useFrame((state) => {
+    if (reduced && built.current) return;
+    built.current = true;
+    const time = reduced ? 2 : state.clock.elapsedTime + (flow.current ?? 0) * 6;
+    const pos = geo.attributes.position as BufferAttribute;
+    const arr = pos.array as Float32Array;
+    const { c, a, b, t, bn, n, ac, cu } = tmp;
+    const e = 0.002;
+    let k = 0;
+    for (let i = 0; i <= segU; i++) {
+      const u = i / segU;
+      center(spec, u, time, c);
+      center(spec, Math.min(1, u + e), time, a);
+      center(spec, Math.max(0, u - e), time, b);
+      t.subVectors(a, b).normalize();
+      bn.crossVectors(t, UP).normalize();
+      n.crossVectors(bn, t).normalize();
+      const th = spec.twist * u + 0.8 * Math.sin(u * 3 + time * spec.speed * 0.6 + spec.phase);
+      ac.copy(bn).multiplyScalar(Math.cos(th)).addScaledVector(n, Math.sin(th));
+      cu.crossVectors(ac, t);
+      const taper = Math.pow(Math.sin(Math.PI * u), 0.55);
+      const width = spec.width * taper * (0.78 + 0.22 * Math.sin(u * 7 + time * spec.speed + spec.phase));
+      for (let j = 0; j <= segV; j++) {
+        const v = (j / segV) * 2 - 1;
+        const off = v * width * 0.5;
+        const cup = v * v * width * spec.cup;
+        arr[k++] = c.x + ac.x * off + cu.x * cup;
+        arr[k++] = c.y + ac.y * off + cu.y * cup;
+        arr[k++] = c.z + ac.z * off + cu.z * cup;
+      }
+    }
+    pos.needsUpdate = true;
+    geo.computeVertexNormals();
+    geo.computeBoundingSphere();
+  });
+
+  return (
+    <mesh geometry={geo} position={spec.pos} rotation={spec.rot} frustumCulled={false}>
+      <meshPhysicalMaterial color="#f3f5f7" metalness={1} roughness={0.075} clearcoat={1} clearcoatRoughness={0.03} envMapIntensity={1.3} side={DoubleSide} />
+    </mesh>
+  );
+}
+
+function Droplets({ reduced }: { reduced: boolean }) {
+  const group = useRef<Group>(null);
+  const drops = useMemo(() => {
+    let seed = 11;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    return Array.from({ length: 5 }, () => ({
+      p: [(r() - 0.2) * 6, (r() - 0.5) * 4, r() * 1.5] as [number, number, number],
+      s: 0.08 + Math.pow(r(), 1.4) * 0.2,
+      ph: r() * Math.PI * 2,
+    }));
+  }, []);
+  useFrame((state) => {
+    if (reduced || !group.current) return;
+    const t = state.clock.elapsedTime;
+    group.current.children.forEach((m, i) => {
+      const d = drops[i];
+      m.position.y = d.p[1] + Math.sin(t * 0.6 + d.ph) * 0.18;
+      m.position.x = d.p[0] + Math.cos(t * 0.4 + d.ph) * 0.08;
+    });
+  });
+  return (
+    <group ref={group}>
+      {drops.map((d, i) => (
+        <mesh key={i} position={d.p} scale={[d.s, d.s * 1.08, d.s]}>
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshPhysicalMaterial color="#f3f5f7" metalness={1} roughness={0.04} clearcoat={1} envMapIntensity={1.4} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * Studio: a ring of soft panels with alternating brightness wraps the sculpture so curved metal
+ * shows smooth white→graphite gradients (molten look), plus a few hard strips for specular sparkle
+ * and one warm amber kicker.
+ */
+const RING = Array.from({ length: 12 }, (_, i) => {
+  const a = (i / 12) * Math.PI * 2;
+  const v = 0.5 + 0.5 * Math.sin(i * 2.1 + 0.6);
+  return { pos: [Math.sin(a) * 11, (i % 3) - 1, Math.cos(a) * 11] as [number, number, number], intensity: 0.15 + v * v * 2.6 };
+});
+
+function MoltenStudio() {
+  return (
+    <Environment resolution={512} frames={1}>
+      <color attach="background" args={["#0b0c0e"]} />
+      <Lightformer form="rect" intensity={2.2} color="#ffffff" position={[0, 14, 0]} scale={[30, 30, 1]} />
+      <Lightformer form="rect" intensity={0.25} color="#8a929b" position={[0, -14, 0]} scale={[30, 30, 1]} />
+      {RING.map((r, i) => (
+        <Lightformer key={i} form="rect" intensity={r.intensity} color={i % 5 === 0 ? "#e4eef8" : "#ffffff"} position={r.pos} scale={[5.5, 22, 1]} />
+      ))}
+      <Lightformer form="rect" intensity={10} color="#ffffff" position={[-4, 2, 6]} scale={[0.5, 12, 1]} />
+      <Lightformer form="rect" intensity={10} color="#ffffff" position={[3, 5, 5]} scale={[12, 0.4, 1]} />
+      <Lightformer form="circle" intensity={8} color="#ffffff" position={[5, 3, 4]} scale={1.2} />
+      <Lightformer form="rect" intensity={5} color="#ffaa5e" position={[8, -2, 0]} scale={[2, 9, 1]} />
+    </Environment>
+  );
+}
+
+function Sculpture({ section, reduced, lite }: { section: RefObject<HTMLElement | null>; reduced: boolean; lite: boolean }) {
+  const root = useRef<Group>(null);
+  const pointer = usePointer();
+  const flow = useRef(0);
+
+  useFrame((_, dt) => {
+    const d = Math.min(dt, 0.05);
+    const el = section.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      flow.current = MathUtils.clamp(1 - r.top / window.innerHeight, 0, 2);
+    }
+    const g = root.current!;
+    const p = pointer.current;
+    g.rotation.x = MathUtils.damp(g.rotation.x, reduced ? 0 : -p.y * 0.12, 2.5, d);
+    g.rotation.y = MathUtils.damp(g.rotation.y, reduced ? 0 : p.x * 0.18, 2.5, d);
+  });
+
+  return (
+    <group ref={root} position={lite ? [0.2, 0.9, 0] : [1.4, 0.35, 0]} scale={lite ? 0.62 : 1}>
+      {RIBBONS.map((s, i) => (
+        <Ribbon key={i} spec={s} segU={lite ? 150 : 280} segV={lite ? 12 : 22} flow={flow} reduced={reduced} />
+      ))}
+      <Droplets reduced={reduced} />
+    </group>
+  );
+}
+
+export default function LiquidChromeScene({ section }: { section: RefObject<HTMLElement | null> }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const [lite, setLite] = useState(false);
+
+  useEffect(() => {
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    setLite(window.matchMedia("(max-width: 768px)").matches);
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: "120px" });
+    if (wrap.current) io.observe(wrap.current);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={wrap} className="absolute inset-0">
+      <Canvas
+        dpr={[1, lite ? 1.4 : 1.8]}
+        camera={{ position: [0, 0, 9], fov: 35 }}
+        frameloop={visible ? "always" : "never"}
+        gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+        aria-hidden
+      >
+        <MoltenStudio />
+        <Sculpture section={section} reduced={reduced} lite={lite} />
+      </Canvas>
+    </div>
+  );
+}
