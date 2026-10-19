@@ -8,10 +8,12 @@ export function WaveLines({
   className = "",
   lines = 38,
   flip = false,
+  stroke = "#9aa3ad",
 }: {
   className?: string;
   lines?: number;
   flip?: boolean;
+  stroke?: string;
 }) {
   const reduce = useReducedMotion();
   const paths = useMemo(
@@ -47,7 +49,7 @@ export function WaveLines({
         animate={reduce ? undefined : { x: [0, -24, 0], y: [0, 10, 0] }}
         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       >
-        <g fill="none" stroke="#9aa3ad" strokeWidth="0.6">
+        <g fill="none" stroke={stroke} strokeWidth="0.6">
           {paths.map((d, i) => (
             <path key={i} d={d} opacity={0.25 + (i / lines) * 0.5} />
           ))}

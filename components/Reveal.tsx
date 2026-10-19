@@ -63,14 +63,14 @@ export function SplitLines({
   );
 }
 
-export function SectionLabel({ index, label }: { index: string; label: string }) {
+export function SectionLabel({ index, label, dark = false }: { index: string; label: string; dark?: boolean }) {
   return (
     <Reveal className="flex items-center gap-4" y={12}>
       <Sparkle size={14} />
-      <span className="eyebrow text-ink">
+      <span className={`eyebrow ${dark ? "text-white" : "text-ink"}`}>
         {index} / {label}
       </span>
-      <span aria-hidden className="h-px w-16 bg-line" />
+      <span aria-hidden className={`h-px w-16 ${dark ? "bg-white/20" : "bg-line"}`} />
     </Reveal>
   );
 }
